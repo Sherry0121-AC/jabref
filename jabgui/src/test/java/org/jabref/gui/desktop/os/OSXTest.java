@@ -11,6 +11,7 @@ import org.jabref.gui.icon.IconTheme;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -58,15 +59,27 @@ class OSXTest {
                 "");
 
         class TestableOSX extends OSX {
-            String actualPath;
-            String actualApplication;
-            int actualPageNumber;
+            private String actualPath;
+            private String actualApplication;
+            private int actualPageNumber;
 
             @Override
             public void openFileWithApplication(String filePath, String application, int pageNumber) {
                 this.actualPath = filePath;
                 this.actualApplication = application;
                 this.actualPageNumber = pageNumber;
+            }
+
+            String getActualPath() {
+                return actualPath;
+            }
+
+            String getActualApplication() {
+                return actualApplication;
+            }
+
+            int getActualPageNumber() {
+                return actualPageNumber;
             }
         }
 
@@ -79,8 +92,8 @@ class OSXTest {
             nativeDesktop.verifyNoInteractions();
         }
 
-        org.junit.jupiter.api.Assertions.assertEquals(filePath, osx.actualPath);
-        org.junit.jupiter.api.Assertions.assertEquals("Skim", osx.actualApplication);
-        org.junit.jupiter.api.Assertions.assertEquals(73, osx.actualPageNumber);
+        assertEquals(filePath, osx.getActualPath());
+        assertEquals("Skim", osx.getActualApplication());
+        assertEquals(73, osx.getActualPageNumber());
     }
 }

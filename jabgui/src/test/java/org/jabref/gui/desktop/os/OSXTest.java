@@ -45,7 +45,7 @@ class OSXTest {
     }
 
     @Test
-    void openFileForPdfWithSkimConfiguredStillUsesBrowserHashJump() throws IOException {
+    void openFileForPdfWithSkimConfiguredUsesConfiguredApplication() throws IOException {
         ExternalFileType pdfType = new CustomExternalFileType("PDF", "pdf", "application/pdf", "Skim", "", IconTheme.JabRefIcons.FILE);
         ExternalApplicationsPreferences preferences = new ExternalApplicationsPreferences(
                 "References",
@@ -57,16 +57,30 @@ class OSXTest {
                 "",
                 "");
 
+        class TestableOSX extends OSX {
+            String actualPath;
+            String actualApplication;
+            int actualPageNumber;
+
+            @Override
+            public void openFileWithApplication(String filePath, String application, int pageNumber) {
+                this.actualPath = filePath;
+                this.actualApplication = application;
+                this.actualPageNumber = pageNumber;
+            }
+        }
+
+        TestableOSX osx = new TestableOSX();
         String filePath = "/tmp/test.pdf";
-        String expectedUrl = "file:///tmp/test.pdf#page=73";
 
         try (MockedStatic<NativeDesktop> nativeDesktop = mockStatic(NativeDesktop.class)) {
-            nativeDesktop.when(() -> NativeDesktop.openBrowser(anyString(), any(ExternalApplicationsPreferences.class)))
-                         .thenAnswer(_ -> null);
+            osx.openFile(filePath, "pdf", preferences, 73);
 
-            new OSX().openFile(filePath, "pdf", preferences, 73);
-
-            nativeDesktop.verify(() -> NativeDesktop.openBrowser(eq(expectedUrl), eq(preferences)));
+            nativeDesktop.verifyNoInteractions();
         }
+
+        org.junit.jupiter.api.Assertions.assertEquals(filePath, osx.actualPath);
+        org.junit.jupiter.api.Assertions.assertEquals("Skim", osx.actualApplication);
+        org.junit.jupiter.api.Assertions.assertEquals(73, osx.actualPageNumber);
     }
 }

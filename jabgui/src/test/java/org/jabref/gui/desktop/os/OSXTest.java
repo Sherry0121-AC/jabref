@@ -2,6 +2,8 @@ package org.jabref.gui.desktop.os;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jabref.gui.externalfiletype.CustomExternalFileType;
 import org.jabref.gui.externalfiletype.ExternalFileType;
@@ -58,32 +60,17 @@ class OSXTest {
                 "",
                 "");
 
-        class TestableOSX extends OSX {
-            private String actualPath;
-            private String actualApplication;
-            private int actualPageNumber;
-
+        AtomicReference<String> actualPath = new AtomicReference<>();
+        AtomicReference<String> actualApplication = new AtomicReference<>();
+        AtomicInteger actualPageNumber = new AtomicInteger();
+        OSX osx = new OSX() {
             @Override
             public void openFileWithApplication(String filePath, String application, int pageNumber) {
-                this.actualPath = filePath;
-                this.actualApplication = application;
-                this.actualPageNumber = pageNumber;
+                actualPath.set(filePath);
+                actualApplication.set(application);
+                actualPageNumber.set(pageNumber);
             }
-
-            String getActualPath() {
-                return actualPath;
-            }
-
-            String getActualApplication() {
-                return actualApplication;
-            }
-
-            int getActualPageNumber() {
-                return actualPageNumber;
-            }
-        }
-
-        TestableOSX osx = new TestableOSX();
+        };
         String filePath = "/tmp/test.pdf";
 
         try (MockedStatic<NativeDesktop> nativeDesktop = mockStatic(NativeDesktop.class)) {
@@ -92,8 +79,8 @@ class OSXTest {
             nativeDesktop.verifyNoInteractions();
         }
 
-        assertEquals(filePath, osx.getActualPath());
-        assertEquals("Skim", osx.getActualApplication());
-        assertEquals(73, osx.getActualPageNumber());
+        assertEquals(filePath, actualPath.get());
+        assertEquals("Skim", actualApplication.get());
+        assertEquals(73, actualPageNumber.get());
     }
 }

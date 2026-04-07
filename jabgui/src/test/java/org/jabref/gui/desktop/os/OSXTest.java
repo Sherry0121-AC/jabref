@@ -2,8 +2,6 @@ package org.jabref.gui.desktop.os;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.jabref.gui.externalfiletype.CustomExternalFileType;
 import org.jabref.gui.externalfiletype.ExternalFileType;
@@ -11,13 +9,18 @@ import org.jabref.gui.frame.ExternalApplicationsPreferences;
 import org.jabref.gui.icon.IconTheme;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 class OSXTest {
 
@@ -60,17 +63,8 @@ class OSXTest {
                 "",
                 "");
 
-        AtomicReference<String> actualPath = new AtomicReference<>();
-        AtomicReference<String> actualApplication = new AtomicReference<>();
-        AtomicInteger actualPageNumber = new AtomicInteger();
-        OSX osx = new OSX() {
-            @Override
-            public void openFileWithApplication(String filePath, String application, int pageNumber) {
-                actualPath.set(filePath);
-                actualApplication.set(application);
-                actualPageNumber.set(pageNumber);
-            }
-        };
+        OSX osx = spy(new OSX());
+        doNothing().when(osx).openFileWithApplication(anyString(), anyString(), anyInt());
         String filePath = "/tmp/test.pdf";
 
         try (MockedStatic<NativeDesktop> nativeDesktop = mockStatic(NativeDesktop.class)) {
@@ -79,8 +73,12 @@ class OSXTest {
             nativeDesktop.verifyNoInteractions();
         }
 
-        assertEquals(filePath, actualPath.get());
-        assertEquals("Skim", actualApplication.get());
-        assertEquals(73, actualPageNumber.get());
+        ArgumentCaptor<String> filePathCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> applicationCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Integer> pageNumberCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(osx).openFileWithApplication(filePathCaptor.capture(), applicationCaptor.capture(), pageNumberCaptor.capture());
+        assertEquals(filePath, filePathCaptor.getValue());
+        assertEquals("Skim", applicationCaptor.getValue());
+        assertEquals(73, pageNumberCaptor.getValue());
     }
 }
